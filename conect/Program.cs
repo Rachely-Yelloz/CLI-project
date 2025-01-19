@@ -7,7 +7,7 @@ var create_rspCommand = new Command("create-rsp", "create rsp file");
 
 var outputOption = new Option<FileInfo>(new[] { "--output", "-o" }, "The name of the file");
 var languageOption = new Option<string[]>("--language", "The language to use");
-languageOption.IsRequired = true;
+languageOption.AllowMultipleArgumentsPerToken = true;
 var noteOption = new Option<bool>(new[] { "--note", "-n" }, "write the sorce?");
 var sortOption = new Option<string>(new[] { "--sort", "-s" }, getDefaultValue: () => "abc", "which sort?");
 var remove_empty_lines_Option = new Option<bool>(new[] { "--remove-empty-lines", "-r" }, "remove empty?");
@@ -21,79 +21,82 @@ bundleCommand.AddOption(remove_empty_lines_Option);
 bundleCommand.AddOption(authorOption);
 
 create_rspCommand.AddOption(outputOption);
-bundleCommand.SetHandler((output,lunguage,  note, sort, remove, auther) =>
+bundleCommand.SetHandler((output, lunguage, note, sort, remove, auther) =>
 {
-    string[] filesNames = Directory.GetFiles(Directory.GetCurrentDirectory());
+    List<string> filesNames = Directory.GetFiles(".\\", "*", SearchOption.AllDirectories).ToList();
     if (lunguage[0] != "all")
     {
         List<string> res = new List<string>();
-        for (int i = 0; i < filesNames.Length; i++)
-        {
-            switch (lunguage[i])
+        for (int j = 0; j < lunguage.Length; j++)
+            switch (lunguage[j])
             {
                 case "c#" or "C#":
-                    if (filesNames[i].Contains(".cs"))
                     {
-                        res.AddRange(filesNames.Where(x => x.Contains(".cs")));
+                        res.AddRange(filesNames.Where(x => x.EndsWith(".cs")));
+                        break;
                     }
-                    break;
                 case "java" or "Java":
-                    if (filesNames[i].Contains(".java"))
                     {
-                        res.AddRange(filesNames.Where(x => x.Contains(".java")));
+                        res.AddRange(filesNames.Where(x => x.EndsWith(".java")));
+
+                        break;
                     }
-                    break;
                 case "python" or "Python":
-                    if (filesNames[i].Contains(".py"))
                     {
-                        res.AddRange(filesNames.Where(x => x.Contains(".py")));
+                        res.AddRange(filesNames.Where(x => x.EndsWith(".py")));
+
+                        break;
                     }
-                    break;
                 case "javascript" or "Javascript":
-                    if (filesNames[i].Contains(".js"))
                     {
-                        res.AddRange(filesNames.Where(x => x.Contains(".js")));
+                        res.AddRange(filesNames.Where(x => x.EndsWith(".js")));
+
+                        break;
                     }
-                    break;
                 case "html" or "Html":
-                    if (filesNames[i].Contains(".html"))
                     {
-                        res.AddRange(filesNames.Where(x => x.Contains(".html")));
+                        res.AddRange(filesNames.Where(x => x.EndsWith(".html")));
+
+                        break;
                     }
-                    break;
                 case "css" or "Css":
-                    if (filesNames[i].Contains(".css"))
                     {
-                        res.AddRange(filesNames.Where(x => x.Contains(".css")));
+                        res.AddRange(filesNames.Where(x => x.EndsWith(".css")));
+
+                        break;
                     }
-                    break;
                 default:
-                    Console.WriteLine("not recognize language " + lunguage[i]);
-                    break;
+                    {
+                        Console.WriteLine("not recognize language " + lunguage[j]);
+                        break;
+                    }
             }
-        }
-        filesNames = res.ToArray();
+        filesNames = res;
 
     }
+
+
 
     if (sort == "abc")
     {
-        filesNames = filesNames.OrderBy(f => Path.GetFileName(f)).ToArray();
+        filesNames = filesNames.OrderBy(f => f).ToList();
     }
     if (sort == "lunguage")
     {
-        filesNames = filesNames.OrderBy(f => Path.GetExtension(f)).ToArray();
+        filesNames = filesNames.OrderBy(f => Path.GetExtension(f)).ToList();
     }
     using (var outputFile = File.CreateText(output.FullName))
     {
+        Console.WriteLine("File created at: " + output.FullName);
+
         if (auther != null)
         {
             outputFile.WriteLine("author: " + auther);
         }
         string[] cointeins;
-        for (int i = 0; i < filesNames.Length; i++)
+        for (int i = 0; i < filesNames.Count; i++)
         {
-            if (note )
+            if (note)
             {
                 outputFile.WriteLine("file name: " + Path.GetFileName(filesNames[i]));
                 outputFile.WriteLine("file path: " + filesNames[i]);
@@ -110,7 +113,7 @@ bundleCommand.SetHandler((output,lunguage,  note, sort, remove, auther) =>
 
 
     }
-}, outputOption,languageOption,  noteOption, sortOption, remove_empty_lines_Option, authorOption);
+}, outputOption, languageOption, noteOption, sortOption, remove_empty_lines_Option, authorOption);
 var rootCommand = new RootCommand("root comand");
 rootCommand.AddCommand(bundleCommand);
 create_rspCommand.SetHandler(() =>
@@ -177,5 +180,5 @@ create_rspCommand.SetHandler(() =>
     }
 });
 rootCommand.AddCommand(create_rspCommand);
+await rootCommand.InvokeAsync(args);
 
-rootCommand.InvokeAsync(args);
